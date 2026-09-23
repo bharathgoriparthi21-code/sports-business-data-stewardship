@@ -29,9 +29,10 @@ models:
       - name: section
         description: >
           Seating tier of the ticket. One of 100 (lower bowl), 200 (upper bowl),
-          LOGE, or COURTSIDE. Raw vendor labels such as "sec 100" are standardized here.
+          LOGE, or COURTSIDE. Raw vendor labels such as "sec 100" are standardized via section_label_mapping.
         meta: {definition_status: confirmed}
         tests:
+          - not_null
           - accepted_values:
               arguments:
                 values: ["100", "200", "COURTSIDE", "LOGE"]

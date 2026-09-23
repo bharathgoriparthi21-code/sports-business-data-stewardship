@@ -30,11 +30,14 @@ seeds:
           - not_null:
               config: {severity: warn}
       - name: section
+        description: >
+          Free-text seating label from the vendor. Variants like "sec 100" occur.
+          Every label must appear in section_label_mapping; a new unmapped label fails the build.
         tests:
-          - accepted_values:
+          - relationships:
               arguments:
-                values: ["100", "200", "COURTSIDE", "LOGE"]
-              config: {severity: warn}
+                to: ref('section_label_mapping')
+                field: raw_label
 
   - name: raw_campaign_sends
     description: Email campaign send log from the marketing platform, one row per email sent.
@@ -69,3 +72,21 @@ seeds:
     meta:
       owner: Data Stewardship
       contains_pii: false
+
+  - name: section_label_mapping
+    description: >
+      Steward-maintained lookup from every raw vendor section label to the standard
+      seating tier. When the vendor introduces a new label, add a row here in a PR.
+    meta:
+      owner: Data Stewardship
+      contains_pii: false
+    columns:
+      - name: raw_label
+        description: Section label exactly as it appears in the vendor file, including stray spaces.
+        tests: [unique, not_null]
+      - name: standard_section
+        description: Standard seating tier (100, 200, LOGE, COURTSIDE).
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["100", "200", "COURTSIDE", "LOGE"]

@@ -55,7 +55,7 @@ with a check that would catch the problem if it came back.
 
 ## About me
 
-Built by Bharath Goriparthi. I've spent 4+ years with SQL, Python, and Power BI
+Built by Bharath Goriparthi. I've spent 2+ years with SQL, Python, and Power BI
 in healthcare and enterprise data, where clear definitions and controlled access
 to sensitive data aren't optional. This repo applies those same habits to sports
 business data.

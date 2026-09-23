@@ -16,6 +16,8 @@ that data **accurate, trusted, and documented**.
 | Null, duplicate, and accepted-value checks | `seeds/_raw_sources.yml`, `models/staging/_staging.yml` |
 | Vendor file row-count reconciliation | `tests/assert_vendor_row_counts_match_manifest.sql` |
 | Flagging stale datasets | `tests/assert_sponsorship_data_not_stale.sql` |
+| Handling a vendor backfill and restatement | `models/staging/stg_sponsorship_impressions.sql` |
+| Standardizing vendor labels with a mapping table | `seeds/section_label_mapping.csv` |
 | Tracking which definitions are confirmed vs. draft | `meta.definition_status` and `meta.open_question` in YAML |
 | PII labeling for access reviews | `meta.contains_pii` / `meta.pii` |
 | Kanban queue with a WIP limit | `docs/kanban-backlog.md` + the Projects tab |
@@ -24,8 +26,8 @@ that data **accurate, trusted, and documented**.
 
 ## How the layers work
 
-- **Raw (seeds):** vendor files exactly as delivered. Tests here are `warn`, not `error`.
-  They surface problems for the queue without blocking anyone.
+- **Raw (seeds):** vendor files exactly as delivered, plus steward-maintained lookups.
+  Tests here check what the business has agreed is acceptable (e.g. under 2% missing prices).
 - **Staging (models):** one clean row per entity. Problems are **flagged**, not silently
   deleted (e.g. `is_missing_price`), so totals can still be reconciled to the source.
   Tests here are strict; if they fail, the build fails.
@@ -42,19 +44,14 @@ dbt docs generate --profiles-dir . && dbt docs serve --profiles-dir .   # browse
 
 ## Current state of the data
 
-`dbt build` result: **20 pass, 8 warnings, 0 errors.** Every warning is a known
-issue with its own item on the board:
+`dbt build` result: **35 pass, 0 warnings, 0 errors.**
 
-| Warning | Rows | What it means |
-|---|---|---|
-| Ticket file vs. vendor manifest | 1 file | Vendor said 2,000 rows; we received 2,015 |
-| Duplicate `ticket_id` | 15 | Vendor re-sent rows; staging keeps the earliest |
-| Missing `price` | 20 | Unknown whether these are comps or dropped values |
-| Missing `customer_id` | 11 | Tickets that can't be tied to campaigns |
-| Nonstandard `section` labels | 3 | Standardized in staging |
-| Sponsorship feed stale | 1 | Feed stops Jan 31; ticketing runs through April |
-| Missing `estimated_value` | 1 | One sponsorship row unvalued |
-| Clicks without opens | 1 check | Above the 1% tolerance; likely image blocking |
+The first build surfaced 8 warnings from problems in the vendor files: duplicate
+tickets, missing prices and customers, messy section labels, a stale sponsorship
+feed, a missing valuation, a row-count mismatch, and clicks without opens. Each was
+resolved in its own commit and documented in [`docs/resolution-log.md`](docs/resolution-log.md).
+Bad rows were flagged rather than deleted, and each resolved warning was replaced
+with a check that would catch the problem if it came back.
 
 ## About me
 

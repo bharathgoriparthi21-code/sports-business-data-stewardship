@@ -4,7 +4,8 @@ Create each of these as a GitHub issue (use the "Stewardship item" template),
 put them on a GitHub Projects board with columns Backlog / In Progress / Review / Done,
 and set the In Progress WIP limit to 2. Close each with its own small PR.
 
-Each one traces to a warning that `dbt build` already reports.
+Items 1-8 trace to warnings from the first `dbt build` and are resolved on the
+`stewardship-fixes` branch (see `resolution-log.md`). Items 9-11 are still open.
 
 | # | Item | Type | Source of the signal |
 |---|------|------|----------------------|

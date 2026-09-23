@@ -1,0 +1,70 @@
+version: 2
+
+# Raw vendor files, loaded exactly as delivered. Tests here are severity: warn.
+# They exist to SURFACE issues for the stewardship queue, not to block the build.
+# Every warning here should map to an issue on the Kanban board.
+
+seeds:
+  - name: raw_ticket_sales
+    description: >
+      Ticket transactions as delivered by the ticketing vendor, one row per ticket
+      sold (in theory). Unmodified. Use stg_ticket_sales for any reporting.
+    meta:
+      owner: Ticketing Operations
+      source_system: Ticketing vendor nightly export
+      contains_pii: true
+    columns:
+      - name: ticket_id
+        tests:
+          - unique:
+              config: {severity: warn}
+          - not_null:
+              config: {severity: warn}
+      - name: price
+        tests:
+          - not_null:
+              config: {severity: warn}
+      - name: customer_id
+        tests:
+          - not_null:
+              config: {severity: warn}
+      - name: section
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["100", "200", "COURTSIDE", "LOGE"]
+              config: {severity: warn}
+
+  - name: raw_campaign_sends
+    description: Email campaign send log from the marketing platform, one row per email sent.
+    meta:
+      owner: Marketing
+      source_system: Email marketing platform export
+      contains_pii: true
+    columns:
+      - name: send_id
+        tests:
+          - unique:
+              config: {severity: warn}
+          - not_null:
+              config: {severity: warn}
+
+  - name: raw_sponsorship_impressions
+    description: Per-game broadcast impressions for sponsored assets, from the media measurement vendor.
+    meta:
+      owner: Partnerships
+      source_system: Media measurement vendor file
+      contains_pii: false
+    columns:
+      - name: estimated_value
+        tests:
+          - not_null:
+              config: {severity: warn}
+
+  - name: vendor_file_manifest
+    description: >
+      Row counts each vendor states it delivered. Compared against actual loaded
+      row counts by tests/assert_vendor_row_counts_match_manifest.sql.
+    meta:
+      owner: Data Stewardship
+      contains_pii: false

@@ -1,0 +1,46 @@
+name: sports_business_stewardship
+version: "1.0.0"
+config-version: 2
+profile: stewardship
+
+seed-paths: ["seeds"]
+model-paths: ["models"]
+test-paths: ["tests"]
+
+seeds:
+  sports_business_stewardship:
+    raw_ticket_sales:
+      +column_types:
+        ticket_id: varchar
+        game_date: date
+        section: varchar
+        price: decimal(10,2)
+        purchase_timestamp: timestamp
+        customer_id: varchar
+    raw_campaign_sends:
+      +column_types:
+        send_id: varchar
+        campaign_id: varchar
+        customer_id: varchar
+        email_sent_date: date
+        opened_flag: integer
+        clicked_flag: integer
+    raw_sponsorship_impressions:
+      +column_types:
+        asset_name: varchar
+        game_date: date
+        broadcast_impressions: bigint
+        estimated_value: decimal(12,2)
+    vendor_file_manifest:
+      +column_types:
+        file_name: varchar
+        expected_row_count: integer
+        delivered_on: date
+
+models:
+  sports_business_stewardship:
+    staging:
+      +materialized: view
+
+vars:
+  sponsorship_max_lag_days: 14   # sponsorship feed may trail ticketing by at most this many days

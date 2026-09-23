@@ -1,0 +1,7 @@
+stewardship:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: stewardship.duckdb
+      threads: 2

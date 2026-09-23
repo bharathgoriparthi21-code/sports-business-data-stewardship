@@ -1,0 +1,118 @@
+version: 2
+
+# Data dictionary for the cleaned (staging) layer.
+# meta.definition_status:
+#   draft     = written by the steward, not yet confirmed by the business owner
+#   confirmed = reviewed and signed off by the owner named in meta.owner
+#   stale     = known to be out of date; see linked issue
+
+models:
+  - name: stg_ticket_sales
+    description: >
+      One row per ticket sold for a home game. Built from raw_ticket_sales with
+      duplicate vendor re-sends removed (earliest purchase_timestamp kept) and
+      section labels standardized. Rows with missing price or customer are KEPT
+      and flagged, so revenue totals can be reconciled against the raw file.
+    meta:
+      owner: Ticketing Operations
+      contains_pii: true
+      refresh: Nightly
+    columns:
+      - name: ticket_id
+        description: Vendor-assigned identifier for a single seat sold for a single game. Unique in this table.
+        meta: {definition_status: confirmed}
+        tests: [unique, not_null]
+      - name: game_date
+        description: Local calendar date (Eastern Time) of the home game the ticket admits to. Not the purchase date.
+        meta: {definition_status: confirmed}
+        tests: [not_null]
+      - name: section
+        description: >
+          Seating tier of the ticket. One of 100 (lower bowl), 200 (upper bowl),
+          LOGE, or COURTSIDE. Raw vendor labels such as "sec 100" are standardized here.
+        meta: {definition_status: confirmed}
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["100", "200", "COURTSIDE", "LOGE"]
+      - name: price
+        description: >
+          Face value paid for the ticket in USD, before fees and taxes. Null means the
+          vendor did not send a price; it does NOT mean the ticket was complimentary.
+        meta: {definition_status: draft, open_question: "Are comp tickets sent as 0 or null? Confirm with Ticketing Ops."}
+      - name: purchase_timestamp
+        description: Date and time the transaction completed at the point of sale. Timezone assumed Eastern; not yet confirmed.
+        meta: {definition_status: draft}
+      - name: customer_id
+        description: Internal identifier of the purchasing account. Links to marketing sends. Personal data; access restricted.
+        meta: {definition_status: confirmed, pii: true}
+      - name: is_missing_price
+        description: True when the vendor file had no price for this ticket. Exclude or impute before summing revenue.
+      - name: is_missing_customer
+        description: True when the ticket cannot be tied to a customer account. These tickets cannot be attributed to campaigns.
+
+  - name: stg_campaign_sends
+    description: One row per marketing email sent to one customer as part of one campaign.
+    meta:
+      owner: Marketing
+      contains_pii: true
+      refresh: Daily
+    columns:
+      - name: send_id
+        description: Unique identifier of one email delivered to one recipient.
+        meta: {definition_status: confirmed}
+        tests: [unique, not_null]
+      - name: campaign_id
+        description: Identifier of the campaign. Format CMP-YYNN, where YY is the calendar year the campaign launched.
+        meta: {definition_status: draft}
+        tests: [not_null]
+      - name: customer_id
+        description: Recipient's customer account identifier. Same key as stg_ticket_sales.customer_id.
+        meta: {definition_status: confirmed, pii: true}
+      - name: email_sent_date
+        description: Date the email was sent by the platform (not scheduled date).
+        meta: {definition_status: confirmed}
+      - name: is_opened
+        description: >
+          True if the recipient opened the email within 72 hours of sending, as
+          reported by the email platform. Opens are estimated via tracking pixel and
+          undercount users who block images.
+        meta: {definition_status: draft, open_question: "Confirm the 72-hour window with Marketing."}
+      - name: is_clicked
+        description: True if the recipient clicked at least one tracked link in the email.
+        meta: {definition_status: confirmed}
+      - name: is_click_without_open
+        description: >
+          True when a click is recorded without an open. Usually caused by image
+          blocking, so is_opened undercounts. Kept as a data quality signal.
+
+  - name: stg_sponsorship_impressions
+    description: One row per sponsored asset per home game, with broadcast exposure and estimated media value.
+    meta:
+      owner: Partnerships
+      contains_pii: false
+      refresh: Per game (vendor file)
+    columns:
+      - name: asset_game_key
+        description: Surrogate key of asset_name and game_date. Unique in this table.
+        tests: [unique, not_null]
+      - name: asset_name
+        description: Name of the sponsored inventory item (e.g. Jersey Patch, Courtside LED).
+        meta: {definition_status: confirmed}
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["Jersey Patch", "Courtside LED", "Arena Concourse Signage", "Scoreboard Feature"]
+      - name: game_date
+        description: Date of the home game where the exposure occurred.
+        meta: {definition_status: confirmed}
+      - name: broadcast_impressions
+        description: Estimated number of times the asset was seen on broadcast, per the measurement vendor's methodology.
+        meta: {definition_status: draft}
+      - name: estimated_value
+        description: >
+          Vendor's estimated equivalent media value in USD. This is a modeled figure
+          used for sponsor recaps, not recognized revenue.
+        meta: {definition_status: draft, open_question: "Which vendor methodology version applies to this season?"}
+      - name: is_missing_value
+        description: True when the vendor did not provide an estimated_value for this row.

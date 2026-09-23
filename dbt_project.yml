@@ -31,6 +31,12 @@ seeds:
         game_date: date
         broadcast_impressions: bigint
         estimated_value: decimal(12,2)
+    raw_sponsorship_impressions_backfill:
+      +column_types:
+        asset_name: varchar
+        game_date: date
+        broadcast_impressions: bigint
+        estimated_value: decimal(12,2)
     section_label_mapping:
       +quote_columns: false
       +column_types:

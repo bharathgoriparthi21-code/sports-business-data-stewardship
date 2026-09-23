@@ -73,9 +73,21 @@ seeds:
       contains_pii: false
     columns:
       - name: estimated_value
-        tests:
-          - not_null:
-              config: {severity: warn}
+        description: >
+          One row in the original delivery has no value. The vendor restated it in
+          raw_sponsorship_impressions_backfill; completeness is enforced in
+          stg_sponsorship_impressions after the correction is applied.
+
+  - name: raw_sponsorship_impressions_backfill
+    description: >
+      Second delivery from the media measurement vendor after the feed was reported
+      stale (backlog #6). Contains the missing February-April games plus one restated
+      row that supplies the missing estimated_value (backlog #7). Where a game/asset
+      appears in both files, this later delivery wins.
+    meta:
+      owner: Partnerships
+      source_system: Media measurement vendor file (backfill)
+      contains_pii: false
 
   - name: vendor_file_manifest
     description: >

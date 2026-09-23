@@ -10,6 +10,8 @@ with actual as (
     select 'raw_campaign_sends', count(*) from {{ ref('raw_campaign_sends') }}
     union all
     select 'raw_sponsorship_impressions', count(*) from {{ ref('raw_sponsorship_impressions') }}
+    union all
+    select 'raw_sponsorship_impressions_backfill', count(*) from {{ ref('raw_sponsorship_impressions_backfill') }}
 )
 
 select
@@ -18,5 +20,5 @@ select
     a.actual_row_count,
     a.actual_row_count - m.expected_row_count as difference
 from {{ ref('vendor_file_manifest') }} m
-join actual a using (file_name)
-where a.actual_row_count <> m.expected_row_count
+left join actual a using (file_name)
+where a.actual_row_count is distinct from m.expected_row_count  -- also catches files missing entirely

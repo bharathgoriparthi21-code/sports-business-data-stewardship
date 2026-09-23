@@ -91,7 +91,10 @@ models:
           blocking, so is_opened undercounts. Kept as a data quality signal.
 
   - name: stg_sponsorship_impressions
-    description: One row per sponsored asset per home game, with broadcast exposure and estimated media value.
+    description: >
+      One row per sponsored asset per home game, with broadcast exposure and estimated
+      media value. Merges the original vendor delivery and the backfill; the later
+      delivery wins where both cover the same asset and game.
     meta:
       owner: Partnerships
       contains_pii: false
@@ -118,5 +121,10 @@ models:
           Vendor's estimated equivalent media value in USD. This is a modeled figure
           used for sponsor recaps, not recognized revenue.
         meta: {definition_status: draft, open_question: "Which vendor methodology version applies to this season?"}
-      - name: is_missing_value
-        description: True when the vendor did not provide an estimated_value for this row.
+        tests: [not_null]
+      - name: source_delivery
+        description: Which vendor delivery this row came from ('original' or 'backfill'). Useful when a sponsor asks why a recap number changed.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["original", "backfill"]

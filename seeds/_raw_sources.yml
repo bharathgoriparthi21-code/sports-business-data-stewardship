@@ -15,11 +15,12 @@ seeds:
       contains_pii: true
     columns:
       - name: ticket_id
+        description: >
+          Not unique in the raw file: the vendor re-sends rows. Duplicates are verified as
+          exact copies (tests/assert_ticket_duplicates_are_exact_copies.sql) and collapsed
+          in stg_ticket_sales, where uniqueness is enforced.
         tests:
-          - unique:
-              config: {severity: warn}
-          - not_null:
-              config: {severity: warn}
+          - not_null
       - name: price
         tests:
           - not_null:

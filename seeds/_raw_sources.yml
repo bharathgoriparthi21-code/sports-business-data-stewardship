@@ -15,25 +15,41 @@ seeds:
       contains_pii: true
     columns:
       - name: ticket_id
+        description: >
+          Not unique in the raw file: the vendor re-sends rows. Duplicates are verified as
+          exact copies (tests/assert_ticket_duplicates_are_exact_copies.sql) and collapsed
+          in stg_ticket_sales, where uniqueness is enforced.
         tests:
-          - unique:
-              config: {severity: warn}
-          - not_null:
-              config: {severity: warn}
+          - not_null
       - name: price
+        description: >
+          Occasionally missing from the vendor file. Resolution of backlog #3: a null
+          price means "not sent", not a complimentary ticket (comps arrive as 0.00).
+          Rows are kept and flagged (stg_ticket_sales.is_missing_price). The build
+          fails if more than 2% of rows are missing a price, which signals a vendor problem.
         tests:
-          - not_null:
-              config: {severity: warn}
-      - name: customer_id
-        tests:
-          - not_null:
-              config: {severity: warn}
-      - name: section
-        tests:
-          - accepted_values:
+          - missing_rate_below:
               arguments:
-                values: ["100", "200", "COURTSIDE", "LOGE"]
-              config: {severity: warn}
+                max_pct: 2
+      - name: customer_id
+        description: >
+          Missing for walk-up and box office cash sales that aren't tied to an account.
+          Resolution of backlog #4: these tickets are kept and flagged
+          (stg_ticket_sales.is_missing_customer) and excluded from campaign attribution.
+          The build fails if more than 1% of rows are missing a customer.
+        tests:
+          - missing_rate_below:
+              arguments:
+                max_pct: 1
+      - name: section
+        description: >
+          Free-text seating label from the vendor. Variants like "sec 100" occur.
+          Every label must appear in section_label_mapping; a new unmapped label fails the build.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('section_label_mapping')
+                field: raw_label
 
   - name: raw_campaign_sends
     description: Email campaign send log from the marketing platform, one row per email sent.
@@ -57,9 +73,21 @@ seeds:
       contains_pii: false
     columns:
       - name: estimated_value
-        tests:
-          - not_null:
-              config: {severity: warn}
+        description: >
+          One row in the original delivery has no value. The vendor restated it in
+          raw_sponsorship_impressions_backfill; completeness is enforced in
+          stg_sponsorship_impressions after the correction is applied.
+
+  - name: raw_sponsorship_impressions_backfill
+    description: >
+      Second delivery from the media measurement vendor after the feed was reported
+      stale (backlog #6). Contains the missing February-April games plus one restated
+      row that supplies the missing estimated_value (backlog #7). Where a game/asset
+      appears in both files, this later delivery wins.
+    meta:
+      owner: Partnerships
+      source_system: Media measurement vendor file (backfill)
+      contains_pii: false
 
   - name: vendor_file_manifest
     description: >
@@ -68,3 +96,21 @@ seeds:
     meta:
       owner: Data Stewardship
       contains_pii: false
+
+  - name: section_label_mapping
+    description: >
+      Steward-maintained lookup from every raw vendor section label to the standard
+      seating tier. When the vendor introduces a new label, add a row here in a PR.
+    meta:
+      owner: Data Stewardship
+      contains_pii: false
+    columns:
+      - name: raw_label
+        description: Section label exactly as it appears in the vendor file, including stray spaces.
+        tests: [unique, not_null]
+      - name: standard_section
+        description: Standard seating tier (100, 200, LOGE, COURTSIDE).
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["100", "200", "COURTSIDE", "LOGE"]

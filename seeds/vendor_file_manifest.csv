@@ -2,3 +2,4 @@ file_name,expected_row_count,delivered_on
 raw_ticket_sales,2000,2026-04-15
 raw_campaign_sends,1500,2026-04-15
 raw_sponsorship_impressions,104,2026-04-15
+raw_sponsorship_impressions_backfill,61,2026-04-22

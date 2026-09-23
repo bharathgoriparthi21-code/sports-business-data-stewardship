@@ -1,10 +1,7 @@
--- Logical consistency: a click without an open is possible (image blocking) but
--- should be rare. Warn if it exceeds 1% of clicks.
-{{ config(severity='warn') }}
+-- Logical consistency: under the inferred-open definition, every clicked email
+-- must count as opened. Returns any row that breaks that rule.
+-- (Resolution of backlog #8. Pixel-only opens remain available as is_pixel_open.)
 
-select
-    count(*) filter (where is_click_without_open)                   as clicks_without_open,
-    count(*) filter (where is_clicked)                              as total_clicks
+select *
 from {{ ref('stg_campaign_sends') }}
-having count(*) filter (where is_click_without_open)
-     > 0.01 * count(*) filter (where is_clicked)
+where is_clicked and not is_opened

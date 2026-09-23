@@ -101,9 +101,25 @@ for game in [g for g in HOME_GAMES if g <= SPONSOR_CUTOFF]:
     for asset, (base, cpm_val) in ASSETS.items():
         impressions = int(base * random.uniform(0.7, 1.3))
         imps.append([asset, game.isoformat(), impressions, round(impressions * cpm_val, 2)])
-random.choice(imps)[3] = ""                       # one missing valuation
+unvalued = random.choice(imps)
+corrected_value = unvalued[3]
+unvalued[3] = ""                                  # one missing valuation
 n_imps = write("raw_sponsorship_impressions.csv",
                ["asset_name", "game_date", "broadcast_impressions", "estimated_value"], imps)
+
+# ---------------------------------------------------------------------------
+# 3b. Vendor backfill + correction (delivered after the stale feed was reported)
+#     Separate RNG so the original files above stay byte-for-byte identical.
+# ---------------------------------------------------------------------------
+rng = random.Random(7)
+backfill = []
+for game in [g for g in HOME_GAMES if g > SPONSOR_CUTOFF]:
+    for asset, (base, cpm_val) in ASSETS.items():
+        impressions = int(base * rng.uniform(0.7, 1.3))
+        backfill.append([asset, game.isoformat(), impressions, round(impressions * cpm_val, 2)])
+backfill.append([unvalued[0], unvalued[1], unvalued[2], corrected_value])  # restated row
+n_backfill = write("raw_sponsorship_impressions_backfill.csv",
+                   ["asset_name", "game_date", "broadcast_impressions", "estimated_value"], backfill)
 
 # ---------------------------------------------------------------------------
 # 4. Vendor manifest: row counts each vendor CLAIMS it delivered
@@ -112,6 +128,7 @@ write("vendor_file_manifest.csv", ["file_name", "expected_row_count", "delivered
     ["raw_ticket_sales", vendor_ticket_count, "2026-04-15"],
     ["raw_campaign_sends", n_sends, "2026-04-15"],
     ["raw_sponsorship_impressions", n_imps, "2026-04-15"],
+    ["raw_sponsorship_impressions_backfill", n_backfill, "2026-04-22"],
 ])
 
 print(f"tickets={n_tix} (vendor claims {vendor_ticket_count}), sends={n_sends}, impressions={n_imps}")

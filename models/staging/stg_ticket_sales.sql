@@ -5,6 +5,7 @@ with source as (
 ),
 
 deduplicated as (
+    -- Duplicates are verified exact copies (tests/assert_ticket_duplicates_are_exact_copies.sql)
     select
         *,
         row_number() over (
@@ -15,13 +16,15 @@ deduplicated as (
 )
 
 select
-    ticket_id,
-    game_date,
-    upper(trim(replace(lower(section), 'sec ', ''))) as section,
-    price,
-    purchase_timestamp,
-    customer_id,
-    price is null        as is_missing_price,
-    customer_id is null  as is_missing_customer
-from deduplicated
-where _row_num = 1
+    d.ticket_id,
+    d.game_date,
+    m.standard_section   as section,
+    d.price,
+    d.purchase_timestamp,
+    d.customer_id,
+    d.price is null        as is_missing_price,
+    d.customer_id is null  as is_missing_customer
+from deduplicated d
+left join {{ ref('section_label_mapping') }} m
+    on d.section = m.raw_label
+where d._row_num = 1

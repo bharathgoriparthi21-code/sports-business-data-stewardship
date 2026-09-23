@@ -38,9 +38,10 @@ models:
                 values: ["100", "200", "COURTSIDE", "LOGE"]
       - name: price
         description: >
-          Face value paid for the ticket in USD, before fees and taxes. Null means the
-          vendor did not send a price; it does NOT mean the ticket was complimentary.
-        meta: {definition_status: draft, open_question: "Are comp tickets sent as 0 or null? Confirm with Ticketing Ops."}
+          Face value paid for the ticket in USD, before fees and taxes. Complimentary
+          tickets are 0.00. Null means the vendor did not send a price; exclude
+          these rows (is_missing_price) before summing revenue.
+        meta: {definition_status: confirmed, note: "Comps arrive as 0.00; null means the vendor did not send a price."}
       - name: purchase_timestamp
         description: Date and time the transaction completed at the point of sale. Timezone assumed Eastern; not yet confirmed.
         meta: {definition_status: draft}
@@ -50,7 +51,9 @@ models:
       - name: is_missing_price
         description: True when the vendor file had no price for this ticket. Exclude or impute before summing revenue.
       - name: is_missing_customer
-        description: True when the ticket cannot be tied to a customer account. These tickets cannot be attributed to campaigns.
+        description: >
+          True when the ticket cannot be tied to a customer account (typically walk-up
+          or cash sales). These tickets are excluded from campaign attribution.
 
   - name: stg_campaign_sends
     description: One row per marketing email sent to one customer as part of one campaign.

@@ -22,13 +22,25 @@ seeds:
         tests:
           - not_null
       - name: price
+        description: >
+          Occasionally missing from the vendor file. Resolution of backlog #3: a null
+          price means "not sent", not a complimentary ticket (comps arrive as 0.00).
+          Rows are kept and flagged (stg_ticket_sales.is_missing_price). The build
+          fails if more than 2% of rows are missing a price, which signals a vendor problem.
         tests:
-          - not_null:
-              config: {severity: warn}
+          - missing_rate_below:
+              arguments:
+                max_pct: 2
       - name: customer_id
+        description: >
+          Missing for walk-up and box office cash sales that aren't tied to an account.
+          Resolution of backlog #4: these tickets are kept and flagged
+          (stg_ticket_sales.is_missing_customer) and excluded from campaign attribution.
+          The build fails if more than 1% of rows are missing a customer.
         tests:
-          - not_null:
-              config: {severity: warn}
+          - missing_rate_below:
+              arguments:
+                max_pct: 1
       - name: section
         description: >
           Free-text seating label from the vendor. Variants like "sec 100" occur.

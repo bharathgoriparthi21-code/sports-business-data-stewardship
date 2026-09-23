@@ -78,17 +78,21 @@ models:
         meta: {definition_status: confirmed}
       - name: is_opened
         description: >
-          True if the recipient opened the email within 72 hours of sending, as
-          reported by the email platform. Opens are estimated via tracking pixel and
-          undercount users who block images.
-        meta: {definition_status: draft, open_question: "Confirm the 72-hour window with Marketing."}
+          True if the recipient opened the email within 72 hours of sending, counting
+          both pixel-tracked opens and "inferred opens" (a click with no pixel open,
+          usually because the email client blocked images). Use this for open rates.
+        meta: {definition_status: draft, open_question: "Confirm the 72-hour window and inferred-open rule with Marketing."}
+      - name: is_pixel_open
+        description: >
+          True only if the platform's tracking pixel fired. Matches the raw
+          opened_flag; kept so open rates can be compared with the platform's own dashboard.
       - name: is_clicked
         description: True if the recipient clicked at least one tracked link in the email.
         meta: {definition_status: confirmed}
       - name: is_click_without_open
         description: >
-          True when a click is recorded without an open. Usually caused by image
-          blocking, so is_opened undercounts. Kept as a data quality signal.
+          True when a click is recorded without a pixel open (image blocking). These
+          rows are already counted in is_opened; the flag is kept as a data quality signal.
 
   - name: stg_sponsorship_impressions
     description: >
